@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useDebounce } from "@/lib/useDebounce";
+import { fetchWithRetry } from "@/lib/fetchWithRetry";
+import { Badge } from "@/components/ui/Badge";
 import type { Delegate } from "@/lib/types";
 
 interface SearchInputProps {
@@ -19,7 +21,11 @@ export function SearchInput({ onSelect }: SearchInputProps) {
   const [results, setResults] = useState<Delegate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const debouncedQuery = useDebounce(query, 300);
+  // 150ms, not 300 — the Apps Script side now caches the roster
+  // (see getPublicDelegatesCached in doGet.gs), so repeated calls as
+  // someone types are cheap and a snappier debounce feels much closer to
+  // real-time without hammering the backend on every single keystroke.
+  const debouncedQuery = useDebounce(query, 150);
 
   useEffect(() => {
     if (debouncedQuery.trim().length < 2) {
@@ -33,12 +39,12 @@ export function SearchInput({ onSelect }: SearchInputProps) {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`)
+    fetchWithRetry(`/api/search?q=${encodeURIComponent(debouncedQuery)}`)
       .then(async (res) => {
         const body = await res.json();
         if (cancelled) return;
         if (!res.ok || !Array.isArray(body)) {
-          setError("Something went wrong while searching. Please try again.");
+          setError("Search failed — please try again.");
           setResults([]);
           return;
         }
@@ -46,7 +52,7 @@ export function SearchInput({ onSelect }: SearchInputProps) {
       })
       .catch(() => {
         if (cancelled) return;
-        setError("Something went wrong while searching. Please try again.");
+        setError("Network error — check your connection and try again.");
         setResults([]);
       })
       .finally(() => {
@@ -77,46 +83,44 @@ export function SearchInput({ onSelect }: SearchInputProps) {
 
   return (
     <div>
-      <label htmlFor="delegate-search">Type your name</label>
-      <br />
+      <label htmlFor="delegate-search" style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>
+        Type your name
+      </label>
       <input
         id="delegate-search"
         type="text"
+        className="input-pill"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="e.g. Juan Dela Cruz"
         autoComplete="off"
       />
 
-      {loading && <p>Searching…</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {showEmptyState && <p>No matching delegate found.</p>}
+      {loading && <p style={{ color: "var(--slate-600)", marginTop: 8 }}>Searching…</p>}
+      {error && <p style={{ color: "var(--red)", marginTop: 8 }}>{error}</p>}
+      {showEmptyState && (
+        <p style={{ color: "var(--slate-600)", marginTop: 8 }}>No matching delegate found.</p>
+      )}
 
       {hasDuplicates && (
-        <p style={{ color: "#a15c00" }}>
-          More than one delegate below shares the same name and chapter — check the
-          preferred name and photo carefully before picking yours.
-        </p>
+        <div style={{ marginTop: 12 }}>
+          <Badge tone="warning">
+            More than one delegate below shares the same name and chapter — check the preferred
+            name and photo carefully before picking yours.
+          </Badge>
+        </div>
       )}
 
       {results.length > 0 && (
-        <ul style={{ listStyle: "none", padding: 0 }}>
+        <ul style={{ listStyle: "none", padding: 0, marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
           {results.map((delegate) => {
             const isDuplicate = (duplicateCounts.get(duplicateKey(delegate)) ?? 0) > 1;
             return (
-              <li key={delegate.delegateId} style={{ marginBottom: 8 }}>
+              <li key={delegate.delegateId}>
                 <button
                   type="button"
                   onClick={() => onSelect(delegate)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    width: "100%",
-                    padding: 8,
-                    textAlign: "left",
-                    border: isDuplicate ? "1px solid #a15c00" : "1px solid #ccc",
-                  }}
+                  className={`result-row${isDuplicate ? " is-duplicate" : ""}`}
                 >
                   {delegate.photoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
