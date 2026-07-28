@@ -104,7 +104,14 @@ export function KitConfirmationForm({
     <div>
       <h2>Conference Kit Confirmation</h2>
 
-      <Card accent>
+      <h3>Participant Signature</h3>
+      <p style={{ color: "var(--slate-600)" }}>
+        Please sign below to confirm your registration and acknowledge receipt of your conference
+        kit.
+      </p>
+      <SignaturePad ref={padRef} maxWidth={480} onChange={setHasSignature} />
+
+      <Card accent style={{ marginTop: 24 }}>
         <label
           style={{
             display: "flex",
@@ -126,13 +133,6 @@ export function KitConfirmationForm({
           </span>
         </label>
       </Card>
-
-      <h3 style={{ marginTop: 24 }}>Participant Signature</h3>
-      <p style={{ color: "var(--slate-600)" }}>
-        Please sign below to confirm your registration and acknowledge receipt of your conference
-        kit.
-      </p>
-      <SignaturePad ref={padRef} maxWidth={480} onChange={setHasSignature} />
 
       {error && <p style={{ color: "var(--red)", marginTop: 12 }}>{error}</p>}
 

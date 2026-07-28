@@ -254,7 +254,7 @@ export default function AdminPage() {
               <th style={headCellStyle}>Chapter</th>
               <th style={headCellStyle}>Status</th>
               <th style={headCellStyle}>Payment</th>
-              <th style={headCellStyle}>Receipt No.</th>
+              <th style={headCellStyle}>Receipt</th>
               <th style={headCellStyle}>Kit Confirmation</th>
               <th style={headCellStyle}>Confirmed At</th>
               <th style={headCellStyle}>Signature</th>
@@ -275,9 +275,25 @@ export default function AdminPage() {
                     <Badge tone="warning">Unpaid</Badge>
                   )}
                 </td>
-                {/* Backend/source for this is intentionally deferred — see PLAN.md.
-                    Placeholder column only, not part of AdminDelegate yet. */}
-                <td style={cellStyle}>—</td>
+                <td style={cellStyle}>
+                  {d.ReceiptURLs && d.ReceiptURLs.length > 0 ? (
+                    <span style={{ display: "flex", gap: 8 }}>
+                      {d.ReceiptURLs.map((url, receiptIndex) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: "var(--sky)" }}
+                        >
+                          View{d.ReceiptURLs.length > 1 ? ` ${receiptIndex + 1}` : ""}
+                        </a>
+                      ))}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td style={cellStyle}>
                   {isKitConfirmed(d.KitConfirmed) ? (
                     <Badge tone="green">Confirmed</Badge>
