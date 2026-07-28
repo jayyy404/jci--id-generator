@@ -34,8 +34,13 @@ export default function AdminPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
 
-  async function loadDelegates() {
-    setLoadError(null);
+  const POLL_INTERVAL_MS = 15000;
+
+  // silent: true for background polling — skips clearing the delegate list
+  // or bouncing the UI, so a transient blip doesn't flash an empty table;
+  // the error still surfaces via loadError.
+  async function loadDelegates(silent?: boolean) {
+    if (!silent) setLoadError(null);
     try {
       // Read-only — safe to auto-retry once on a dropped connection.
       const res = await fetchWithRetry("/api/admin/list");
@@ -59,6 +64,7 @@ export default function AdminPage() {
         return;
       }
       setDelegates(body.delegates as AdminDelegate[]);
+      setLoadError(null);
       setAuth("loggedIn");
     } catch {
       setLoadError("Network error — check your connection and try again.");
@@ -70,6 +76,16 @@ export default function AdminPage() {
     loadDelegates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Two devices in practice — one for participants confirming, one for
+  // Secretariat watching status — so the admin table needs to reflect new
+  // confirmations without someone manually reloading the page.
+  useEffect(() => {
+    if (auth !== "loggedIn") return;
+    const interval = setInterval(() => loadDelegates(true), POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth]);
 
   async function handleLogin() {
     setLoggingIn(true);
