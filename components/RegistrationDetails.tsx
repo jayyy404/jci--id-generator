@@ -39,9 +39,7 @@ export function RegistrationDetails({ delegate, onConfirm, onBack }: Registratio
   return (
     <div>
       <h2 style={{ fontSize: 22, marginBottom: 10 }}>Registration Details</h2>
-      <p style={{ color: "var(--slate-800)", fontWeight: 500, margin: "0 0 6px", lineHeight: 1.4 }}>
-        Please review the information below.
-      </p>
+  
       <p style={{ color: "var(--slate-600)", margin: "0 0 20px", lineHeight: 1.4 }}>
         If you notice any discrepancies, kindly proceed to the Secretariat before confirming your
         registration.

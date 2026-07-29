@@ -83,9 +83,6 @@ export function SearchInput({ onSelect }: SearchInputProps) {
 
   return (
     <div>
-      <label htmlFor="delegate-search" style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>
-        Type your name
-      </label>
       <input
         id="delegate-search"
         type="text"

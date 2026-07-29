@@ -29,7 +29,7 @@ function TribalBurst({ mirror, className }: { mirror?: boolean; className?: stri
   );
 }
 
-function Sailboat({
+export function Sailboat({
   variant,
   size = 44,
   bob,

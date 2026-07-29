@@ -83,3 +83,5 @@ Export confirmations to Excel/CSV
  - add new tab for Payment Status if (paid or unpaid) from the "Form Responses 1' page on sheets (new code should check if the users local chapter has alreayd paid or not )
  - add new tab for reciept number for the moment(to do later for its backend which page or column to fetch)
  
+
+ 

@@ -13,9 +13,10 @@ export interface Delegate {
 // Full row shape returned by the password-gated admin endpoint — keys match
 // the PortalDelegates sheet's header names exactly (see apps-script/doGet.gs
 // rowToObject), not the camelCase public Delegate shape above. PaymentStatus
-// and ReceiptURLs are computed server-side (handleAdminList /
-// getChapterPaymentStatusMap / getReceiptUrlsByChapter), not real sheet
-// columns.
+// and ReceiptNumber are computed server-side (handleAdminList /
+// getChapterPaymentInfo), not real PortalDelegates columns — ReceiptNumber
+// comes from Form Responses 1's "Receipt number" column, looked up per
+// chapter, comma-joined if a chapter has more than one distinct value.
 export interface AdminDelegate {
   DelegateId: string;
   ChapterName: string;
@@ -31,6 +32,6 @@ export interface AdminDelegate {
   KitConfirmedAt: string;
   SignatureURL: string;
   PaymentStatus: "Paid" | "Unpaid";
-  ReceiptURLs: string[];
+  ReceiptNumber: string;
   [key: string]: unknown;
 }

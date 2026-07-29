@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { jsonToCsv } from "@/lib/csv";
 import { fetchWithRetry } from "@/lib/fetchWithRetry";
 import { HeroBanner } from "@/components/HeroBanner";
-import { IntroOverlay } from "@/components/IntroOverlay";
+import { WaveBand } from "@/components/WaveBand";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import type { AdminDelegate } from "@/lib/types";
@@ -152,6 +152,7 @@ export default function AdminPage() {
 
   if (auth === "loggedOut") {
     return (
+      <>
       <HeroBanner>
         <h1 style={{ fontSize: 22, marginBottom: 10 }}>Secretariat Admin</h1>
         <p style={{ color: "var(--slate-600)", margin: "0 0 14px", lineHeight: 1.4 }}>
@@ -210,12 +211,14 @@ export default function AdminPage() {
         </div>
         {loginError && <p style={{ color: "var(--red)", marginTop: 12 }}>{loginError}</p>}
       </HeroBanner>
+      <WaveBand />
+      </>
     );
   }
 
   return (
+    <>
     <HeroBanner wide>
-      <IntroOverlay />
       <div
         className="glass-panel"
         style={{
@@ -263,15 +266,27 @@ export default function AdminPage() {
       </div>
 
       <div className="glass-panel" style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
+        <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}>
+          <colgroup>
+            <col style={{ width: "16%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "17%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "16%" }} />
+            <col style={{ width: "8%" }} />
+          </colgroup>
           <thead>
             <tr style={{ background: "rgba(30, 58, 95, 0.92)" }}>
               <th style={headCellStyle}>Name</th>
+              <th style={headCellStyle}>Size</th>
               <th style={headCellStyle}>Chapter</th>
               <th style={headCellStyle}>Status</th>
               <th style={headCellStyle}>Payment</th>
               <th style={headCellStyle}>Receipt</th>
-              <th style={headCellStyle}>Kit Confirmation</th>
+              <th style={headCellStyle}>Kit</th>
               <th style={headCellStyle}>Confirmed At</th>
               <th style={headCellStyle}>Signature</th>
             </tr>
@@ -282,6 +297,7 @@ export default function AdminPage() {
                 <td style={cellStyle}>
                   {d.FirstName} {d.LastName}
                 </td>
+                <td style={cellStyle}>{d.TShirtSize}</td>
                 <td style={cellStyle}>{d.ChapterName}</td>
                 <td style={cellStyle}>{d.Status}</td>
                 <td style={cellStyle}>
@@ -292,23 +308,7 @@ export default function AdminPage() {
                   )}
                 </td>
                 <td style={cellStyle}>
-                  {d.ReceiptURLs && d.ReceiptURLs.length > 0 ? (
-                    <span style={{ display: "flex", gap: 8 }}>
-                      {d.ReceiptURLs.map((url, receiptIndex) => (
-                        <a
-                          key={url}
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ color: "var(--sky)" }}
-                        >
-                          View{d.ReceiptURLs.length > 1 ? ` ${receiptIndex + 1}` : ""}
-                        </a>
-                      ))}
-                    </span>
-                  ) : (
-                    "—"
-                  )}
+                  <strong>{d.ReceiptNumber || "—"}</strong>
                 </td>
                 <td style={cellStyle}>
                   {isKitConfirmed(d.KitConfirmed) ? (
@@ -333,21 +333,23 @@ export default function AdminPage() {
         </table>
       </div>
     </HeroBanner>
+    <WaveBand />
+    </>
   );
 }
 
 const headCellStyle: React.CSSProperties = {
-  padding: "14px 24px",
+  padding: "10px 10px",
   textAlign: "left",
-  fontSize: 13,
+  fontSize: 12,
   fontWeight: 600,
   color: "var(--white)",
-  whiteSpace: "nowrap",
 };
 
 const cellStyle: React.CSSProperties = {
-  padding: "14px 24px",
+  padding: "10px 10px",
   textAlign: "left",
-  fontSize: 14,
+  fontSize: 13,
   borderBottom: "1px solid var(--border)",
+  wordBreak: "break-word",
 };
