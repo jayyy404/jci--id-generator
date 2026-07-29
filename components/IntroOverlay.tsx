@@ -28,8 +28,18 @@ const flags = Array.from({ length: FLAG_COUNT }, (_, i) => {
   return { x, y: waveY(x), color: FLAG_COLORS[i % FLAG_COLORS.length], delay: i * 0.08 };
 });
 
+const VISIBLE_DURATION_MS = 4600;
+const REPLAY_INTERVAL_MS = 30000;
+
 export function IntroOverlay() {
   const [visible, setVisible] = useState(true);
+  // Bumped to remount a fresh <svg> each replay — the CSS animations use
+  // `forwards` fill-mode (deliberately, so they hold their end state instead
+  // of snapping back), which means restarting them requires a brand new DOM
+  // node, not just re-toggling visibility on the same one. React reuses the
+  // same element across renders unless its `key` changes, so this key is
+  // what actually forces that remount.
+  const [playCount, setPlayCount] = useState(0);
 
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -38,14 +48,28 @@ export function IntroOverlay() {
       return;
     }
 
-    const timer = setTimeout(() => setVisible(false), 4600);
-    return () => clearTimeout(timer);
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+
+    function play() {
+      setPlayCount((count) => count + 1);
+      setVisible(true);
+      hideTimer = setTimeout(() => setVisible(false), VISIBLE_DURATION_MS);
+    }
+
+    play();
+    const interval = setInterval(play, REPLAY_INTERVAL_MS);
+
+    return () => {
+      clearInterval(interval);
+      if (hideTimer) clearTimeout(hideTimer);
+    };
   }, []);
 
   if (!visible) return null;
 
   return (
     <svg
+      key={playCount}
       className="intro-line"
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       preserveAspectRatio="none"
