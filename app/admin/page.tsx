@@ -265,7 +265,7 @@ export default function AdminPage() {
         </Button>
       </div>
 
-      <div className="glass-panel" style={{ overflowX: "auto" }}>
+      <div className="glass-panel" style={{ overflowX: "auto", overflowY: "auto", maxHeight: 460 }}>
         <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: "16%" }} />
@@ -279,7 +279,7 @@ export default function AdminPage() {
             <col style={{ width: "8%" }} />
           </colgroup>
           <thead>
-            <tr style={{ background: "rgba(30, 58, 95, 0.92)" }}>
+            <tr style={{ background: "rgba(30, 58, 95, 0.92)", position: "sticky", top: 0, zIndex: 1 }}>
               <th style={headCellStyle}>Name</th>
               <th style={headCellStyle}>Size</th>
               <th style={headCellStyle}>Chapter</th>
