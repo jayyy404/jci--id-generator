@@ -110,7 +110,10 @@ export default function AdminPage() {
         return;
       }
       setPassword("");
-      await loadDelegates();
+      setAuth("loggedIn");
+      // Not awaited on purpose — let the table's own loading/empty state
+      // handle the wait instead of blocking the login button on it.
+      loadDelegates();
     } catch {
       setLoginError("Network error — check your connection and try again.");
     } finally {
