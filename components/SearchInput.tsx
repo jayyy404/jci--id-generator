@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useDebounce } from "@/lib/useDebounce";
 import { fetchWithRetry } from "@/lib/fetchWithRetry";
 import { Badge } from "@/components/ui/Badge";
 import type { Delegate } from "@/lib/types";
@@ -16,53 +15,70 @@ function duplicateKey(delegate: Delegate): string {
     .join("|");
 }
 
+const MAX_RESULTS = 20;
+// Matches /api/delegates' own 60s cache — an open tab (e.g. a kiosk left
+// running for hours) picks up new/updated registrations within ~1 minute
+// instead of only ever seeing the roster as of when the page first loaded.
+const ROSTER_POLL_MS = 60_000;
+
 export function SearchInput({ onSelect }: SearchInputProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Delegate[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [roster, setRoster] = useState<Delegate[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // 150ms, not 300 — the Apps Script side now caches the roster
-  // (see getPublicDelegatesCached in doGet.gs), so repeated calls as
-  // someone types are cheap and a snappier debounce feels much closer to
-  // real-time without hammering the backend on every single keystroke.
-  const debouncedQuery = useDebounce(query, 150);
 
+  // Fetch the whole delegate directory once and filter it locally as the
+  // user types — no network round trip per keystroke (see /api/delegates).
+  // Then keep polling in the background so a long-lived tab stays fresh.
   useEffect(() => {
-    if (debouncedQuery.trim().length < 2) {
-      setResults([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    let hasLoaded = false;
 
-    fetchWithRetry(`/api/search?q=${encodeURIComponent(debouncedQuery)}`)
-      .then(async (res) => {
+    async function loadRoster() {
+      try {
+        const res = await fetchWithRetry("/api/delegates");
         const body = await res.json();
         if (cancelled) return;
         if (!res.ok || !Array.isArray(body)) {
-          setError("Search failed — please try again.");
-          setResults([]);
+          // Only surface an error if we have nothing to show yet — a failed
+          // background refresh shouldn't blank out an already-working search.
+          if (!hasLoaded) setError("Couldn't load the delegate directory — please refresh.");
           return;
         }
-        setResults(body as Delegate[]);
-      })
-      .catch(() => {
+        hasLoaded = true;
+        setError(null);
+        setRoster(body as Delegate[]);
+      } catch {
         if (cancelled) return;
-        setError("Network error — check your connection and try again.");
-        setResults([]);
-      })
-      .finally(() => {
+        if (!hasLoaded) setError("Network error — check your connection and refresh.");
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    }
+
+    loadRoster();
+    const interval = setInterval(loadRoster, ROSTER_POLL_MS);
 
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
-  }, [debouncedQuery]);
+  }, []);
+
+  const trimmedQuery = query.trim().toLowerCase();
+
+  const results = useMemo(() => {
+    if (trimmedQuery.length < 2) return [];
+    const matches: Delegate[] = [];
+    for (const delegate of roster) {
+      const full = `${delegate.firstName} ${delegate.lastName}`.toLowerCase();
+      if (full.includes(trimmedQuery)) {
+        matches.push(delegate);
+        if (matches.length >= MAX_RESULTS) break;
+      }
+    }
+    return matches;
+  }, [roster, trimmedQuery]);
 
   // Same first + last name within the same chapter is a real scenario (common
   // Filipino names repeat), and picking the wrong one would print someone
@@ -79,7 +95,7 @@ export function SearchInput({ onSelect }: SearchInputProps) {
   const hasDuplicates = Array.from(duplicateCounts.values()).some((count) => count > 1);
 
   const showEmptyState =
-    !loading && !error && debouncedQuery.trim().length >= 2 && results.length === 0;
+    !loading && !error && trimmedQuery.length >= 2 && results.length === 0;
 
   return (
     <div>
@@ -93,7 +109,9 @@ export function SearchInput({ onSelect }: SearchInputProps) {
         autoComplete="off"
       />
 
-      {loading && <p style={{ color: "var(--slate-600)", marginTop: 8 }}>Searching…</p>}
+      {loading && trimmedQuery.length > 0 && (
+        <p style={{ color: "var(--slate-600)", marginTop: 8 }}>Loading delegate directory…</p>
+      )}
       {error && <p style={{ color: "var(--red)", marginTop: 8 }}>{error}</p>}
       {showEmptyState && (
         <p style={{ color: "var(--slate-600)", marginTop: 8 }}>No matching delegate found.</p>

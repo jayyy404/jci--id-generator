@@ -1,22 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { Delegate } from "@/lib/types";
 import { getOrFetch } from "@/lib/ttlCache";
 
 export const dynamic = "force-dynamic";
 
 // Matches the Apps Script-side PUBLIC_DELEGATES_CACHE_TTL_SECONDS (60s) —
-// a repeated/retyped identical query within that window is guaranteed to
-// return the same data upstream anyway, so this skips the extra network
-// hop to Google entirely for that case.
-const SEARCH_CACHE_TTL_MS = 60_000;
+// the roster doesn't change faster than that upstream anyway, so this skips
+// re-fetching within the window. One cache key for the whole roster (not
+// per-query, unlike the old /api/search) since the frontend now fetches this
+// once and filters locally.
+const ROSTER_CACHE_TTL_MS = 60_000;
 
-export async function GET(request: NextRequest) {
-  const q = request.nextUrl.searchParams.get("q")?.trim().toLowerCase() ?? "";
-
-  if (!q || q.length < 2) {
-    return NextResponse.json([]);
-  }
-
+export async function GET() {
   const appsScriptUrl = process.env.APPS_SCRIPT_URL;
   if (!appsScriptUrl) {
     console.error("APPS_SCRIPT_URL is not set");
@@ -24,8 +19,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const data = await getOrFetch(`search:${q}`, SEARCH_CACHE_TTL_MS, async () => {
-      const upstream = `${appsScriptUrl}?q=${encodeURIComponent(q)}`;
+    const data = await getOrFetch("delegates:all", ROSTER_CACHE_TTL_MS, async () => {
+      const upstream = `${appsScriptUrl}?all=1`;
       // fetch() follows the Apps Script /exec -> googleusercontent.com 302 redirect by default.
       const res = await fetch(upstream, { method: "GET" });
 
@@ -48,7 +43,7 @@ export async function GET(request: NextRequest) {
     if (err instanceof Error && err.message === "upstream-error") {
       return NextResponse.json({ error: "Upstream error" }, { status: 502 });
     }
-    console.error("Apps Script search failed", err);
+    console.error("Apps Script roster fetch failed", err);
     return NextResponse.json({ error: "Search failed" }, { status: 500 });
   }
 }
