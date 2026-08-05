@@ -31,7 +31,7 @@ export interface AdminDelegate {
   KitConfirmed: boolean | string;
   KitConfirmedAt: string;
   SignatureURL: string;
-  PaymentStatus: "Paid" | "Unpaid";
+  PaymentStatus: "Paid" | "Unpaid" | "Free";
   ReceiptNumber: string;
   [key: string]: unknown;
 }

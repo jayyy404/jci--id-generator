@@ -306,6 +306,8 @@ export default function AdminPage() {
                 <td style={cellStyle}>
                   {d.PaymentStatus === "Paid" ? (
                     <Badge tone="green">Paid</Badge>
+                  ) : d.PaymentStatus === "Free" ? (
+                    <Badge tone="sky">Free</Badge>
                   ) : (
                     <Badge tone="warning">Unpaid</Badge>
                   )}

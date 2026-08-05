@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from "react";
 
-type Tone = "gold" | "green" | "neutral" | "warning";
+type Tone = "gold" | "green" | "neutral" | "warning" | "sky";
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: Tone;
@@ -11,6 +11,7 @@ const toneStyles: Record<Tone, React.CSSProperties> = {
   green: { background: "linear-gradient(135deg, var(--green), var(--green-light))", color: "var(--white)" },
   neutral: { background: "#e5e7eb", color: "var(--slate-600)" },
   warning: { background: "var(--amber-100)", color: "#a15c00" },
+  sky: { background: "var(--sky)", color: "var(--white)" },
 };
 
 export function Badge({ tone = "neutral", style, ...rest }: BadgeProps) {
