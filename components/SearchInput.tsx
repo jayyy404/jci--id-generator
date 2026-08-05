@@ -127,7 +127,18 @@ export function SearchInput({ onSelect }: SearchInputProps) {
       )}
 
       {results.length > 0 && (
-        <ul style={{ listStyle: "none", padding: 0, marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+        <ul
+          style={{
+            listStyle: "none",
+            padding: 0,
+            marginTop: 12,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            maxHeight: 190,
+            overflowY: "auto",
+          }}
+        >
           {results.map((delegate) => {
             const isDuplicate = (duplicateCounts.get(duplicateKey(delegate)) ?? 0) > 1;
             return (
